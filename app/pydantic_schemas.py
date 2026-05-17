@@ -27,3 +27,23 @@ class RenderResponse(BaseModel):
 # RenderRequest
 class RenderRequest(BaseModel):
     variables: dict
+
+class NotificationRequest(BaseModel):
+    user_id: int
+    template_id: int
+    variables: dict
+    priority: Optional[str] = "normal"
+    channel: Optional[str] = None
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    template_id: int
+    channel: Optional[str]
+    subject: Optional[str]
+    body: str
+    priority: str
+    status: str
+    created_at: datetime
+    sent_at: Optional[datetime]
+    model_config = ConfigDict(from_attributes=True)
