@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models import User, Template, Notification, DeliveryAttempt
 from app.utils import render_template
 from app.channels.email_handler import send_email
+from app.channels.sms_handler import send_sms
 from dotenv import load_dotenv
 import os
 from datetime import timezone, datetime
@@ -40,20 +41,23 @@ def send_mail(request: NotificationRequest, db: Session = Depends(get_db)):
     db.add(new_notification)
     db.flush()
     db.refresh(new_notification)
-    # If the channel is "email", call your email_handler to send it
+    # If the channel is "email", call email_handler to send it
     if new_notification.channel == "email":
-        mail = send_email(new_notification.user.email, new_notification.subject, new_notification.body)
-        # Based on the result from email_handler, update the notification status to "sent" or "failed"
-        if mail["success"]:
-            new_notification.status = "sent"
-            new_notification.sent_at = datetime.now(timezone.utc)
-        else:
-            new_notification.status = "failed"
-        #  Create a DeliveryAttempt record logging what happened
-        delivery_attempt = DeliveryAttempt(notification_id = new_notification.id, status = new_notification.status,
-                                            channel = new_notification.channel, error_message = mail.get("error"), 
-                                            response_code = mail.get("status_code"))
-        db.add(delivery_attempt)
+        delivery_result = send_email(new_notification.user.email, new_notification.subject, new_notification.body)
+    # elif channel is "sms", call sms_handler to send it
+    elif new_notification.channel == "sms":
+        delivery_result = send_sms(user.phone, new_notification.body)
+    # Based on the delivery_result, update the notification status to "sent" or "failed"
+    if delivery_result["success"]:
+        new_notification.status = "sent"
+        new_notification.sent_at = datetime.now(timezone.utc)
+    else:
+        new_notification.status = "failed"
+    #  Create a DeliveryAttempt record logging what happened        
+    delivery_attempt = DeliveryAttempt(notification_id = new_notification.id, status = new_notification.status,
+                                            channel = new_notification.channel, error_message = delivery_result.get("error"), 
+                                            response_code = delivery_result.get("status_code"))    
+    db.add(delivery_attempt)
     db.commit()
     # Return the notification details to the caller
     return (new_notification)
