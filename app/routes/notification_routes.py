@@ -6,6 +6,7 @@ from app.models import User, Template, Notification, DeliveryAttempt
 from app.utils import render_template
 from app.channels.email_handler import send_email
 from app.channels.sms_handler import send_sms
+from app.channels.webhook_handler import send_webhook
 from dotenv import load_dotenv
 import os
 from datetime import timezone, datetime
@@ -46,7 +47,19 @@ def send_mail(request: NotificationRequest, db: Session = Depends(get_db)):
         delivery_result = send_email(new_notification.user.email, new_notification.subject, new_notification.body)
     # elif channel is "sms", call sms_handler to send it
     elif new_notification.channel == "sms":
+        if not user.phone:
+            raise HTTPException(status_code=400, detail="User has no phone number configured")
         delivery_result = send_sms(user.phone, new_notification.body)
+    # elif webhook channel "webhook", call webhook_handler to send it
+    elif new_notification.channel == "webhook":
+        if not user.webhook_url:
+            raise HTTPException(status_code=404, detail="User has no webhook URL configured")
+        delivery_result = send_webhook(user.webhook_url,{"notification_id": new_notification.id,
+                                                        "user_id": new_notification.user_id,
+                                                        "subject": new_notification.subject,
+                                                        "body": new_notification.body,
+                                                        "channel": new_notification.channel,
+                                                        "priority": new_notification.priority})
     # Based on the delivery_result, update the notification status to "sent" or "failed"
     if delivery_result["success"]:
         new_notification.status = "sent"

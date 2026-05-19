@@ -4,3 +4,4 @@ venv/
 # python compiled files
 *.pyc
 __pycache__/
+*.rdb
