@@ -19,6 +19,9 @@ class User(Base):
     webhook_url = Column(String, nullable=True)
     # preferred_channel - string, default "email", not nullable
     preferred_channel = Column(String, nullable=False, default="email")
+    email_enabled = Column(Boolean, nullable=False, default=True)
+    sms_enabled = Column(Boolean, nullable=False, default=True)
+    webhook_enabled = Column(Boolean, nullable=False, default=True)
     # is_active - boolean, default True, not nullable
     is_active = Column(Boolean, nullable=False, default=True)
     # created_at - datetime, default to now (UTC)

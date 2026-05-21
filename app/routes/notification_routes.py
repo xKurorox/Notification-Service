@@ -33,10 +33,21 @@ def send_mail(request: NotificationRequest, db: Session = Depends(get_db)):
             render_subject = render_template(template.subject, request.variables)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    channel_enabled = {
+    "email": user.email_enabled,
+    "sms": user.sms_enabled,
+    "webhook": user.webhook_enabled}
+    channel = request.channel or user.preferred_channel
+    if not channel_enabled.get(channel, False):
+        # channel is disabled, fall back to preferred
+        channel = user.preferred_channel
+    # if preferred is also disabled, reject
+    if not channel_enabled.get(channel, False):
+        raise HTTPException(status_code=400, detail="No enabled channel available for this user")
     # Create a Notification record in the database with all the details (user_id, template_id, channel, rendered subject, rendered body, context, priority, status "pending")
     new_notification = Notification(user_id = request.user_id, template_id = request.template_id, 
-                                    channel = request.channel or user.preferred_channel, status = "queued", subject = render_subject, 
-                                    body = render_body, context = request.variables, priority = request.priority)
+                                channel = channel, status = "queued", subject = render_subject, 
+                                body = render_body, context = request.variables, priority = request.priority)
     db.add(new_notification)
     db.flush()
     db.refresh(new_notification)
