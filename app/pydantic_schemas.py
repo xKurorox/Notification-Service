@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from  typing import Optional
+from  typing import Optional, List, Text
 from datetime import datetime
 
 # TemplateCreate 
@@ -79,3 +79,35 @@ class UserUpdate(BaseModel):
     email_enabled: Optional[bool] = None
     webhook_enabled: Optional[bool] = None
     is_active: Optional[bool] = None
+
+class DeliveryAttemptResponse(BaseModel):
+    id: int
+    notification_id: int
+    attempt_number: int
+    status: str
+    channel: str
+    error_message: Optional[str] = None
+    response_code: Optional[int] = None
+    webhook_url: Optional[str] = None
+    attempted_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class NotificationDetailResponse(BaseModel):
+    id: int
+    user_id: int
+    template_id: int
+    channel: Optional[str]
+    subject: Optional[str]
+    body: str
+    priority: str
+    status: str
+    created_at: datetime
+    sent_at: Optional[datetime]
+    delivery_attempts: List[DeliveryAttemptResponse]
+    model_config = ConfigDict(from_attributes=True)
+
+class AnalyticsResponse(BaseModel):
+    total: int
+    by_status: dict
+    by_channel: dict
+    by_priority: dict
