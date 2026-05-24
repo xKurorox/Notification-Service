@@ -8,6 +8,8 @@ from datetime import datetime, timezone, timedelta
 
 MAX_RETRIES = 5
 
+# Runs as a standalone process — scans for failed notifications and retries them
+# using exponential backoff. Moves to dead_letter after MAX_RETRIES attempts.
 while True:
     db = SessionLocal()
     try:
@@ -23,13 +25,12 @@ while True:
             print(f"Notification {current_job.id} moved to dead letter after {attempt_count} attempts")
             db.commit()
             continue
-        # get the most recent delivery attempt for this notification
         last_attempt = db.query(DeliveryAttempt).filter(DeliveryAttempt.notification_id == current_job.id).order_by(DeliveryAttempt.attempted_at.desc()).first()
 
-        # calculate how long to wait: 2^attempt_count seconds
+        # Exponential backoff: wait 2^attempt_count seconds before retrying
+        # (2s after 1st fail, 4s after 2nd, 8s after 3rd, etc.)
         wait_time = timedelta(seconds=2 ** attempt_count)
 
-        # if not enough time has passed, skip for now
         if last_attempt and datetime.now(timezone.utc) - last_attempt.attempted_at < wait_time:
             db.close()
             continue

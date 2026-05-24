@@ -9,8 +9,8 @@ router = APIRouter()
 # POST /users — create a user (email, phone, webhook_url, preferred_channel)
 @router.post("/", response_model=UserResponse)
 def create_user(request: UserRequest, db: Session = Depends(get_db)):
-    exisiting_user = db.query(User).filter(User.email == request.email).first()
-    if exisiting_user:
+    existing_user = db.query(User).filter(User.email == request.email).first()
+    if existing_user:
         raise HTTPException(status_code=409, detail="User already exist")
     new_user = User(email = request.email, phone = request.phone,
                 webhook_url = request.webhook_url, preferred_channel = request.preferred_channel,

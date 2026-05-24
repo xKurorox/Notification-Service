@@ -13,6 +13,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False)
 Base = declarative_base()
 
 def get_db():
+    # Generator that yields a db session and guarantees it closes after each request
     db = SessionLocal()
     try:
         yield db

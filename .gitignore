@@ -1,7 +1,11 @@
 venv/
 .env
+*.db
 
 # python compiled files
 *.pyc
 __pycache__/
 *.rdb
+
+# VSCode Code Runner temp file
+tempCodeRunnerFile.py

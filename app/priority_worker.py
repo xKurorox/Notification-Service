@@ -7,9 +7,12 @@ from app.models import Notification, User, DeliveryAttempt
 from datetime import datetime, timezone
 import time
 
+# Runs as a standalone process — continuously pops the highest-priority notification
+# off the Redis sorted set and dispatches it to the correct channel handler
 while True:
     try:
         db = SessionLocal()
+        # zpopmin removes and returns the item with the lowest score (highest priority)
         result = redis_client.zpopmin("notifications", 1)
         if not result:
             print("No notification, waiting...")

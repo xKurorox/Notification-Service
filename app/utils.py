@@ -2,6 +2,7 @@ from jinja2 import Template, Environment, StrictUndefined, UndefinedError
 from typing import Optional
 
 def render_template(template: str, variables: Optional[dict] = None):
+    # StrictUndefined raises an error if a variable is used in the template but not provided
     t = Template(template, undefined=StrictUndefined)
     try:
         result = t.render(variables or {})
